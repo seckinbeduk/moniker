@@ -164,9 +164,9 @@ private struct SettingsSection: View {
     private var engineHelp: String {
         let now = model.engineDescription.map { "Now using \($0). " } ?? ""
         switch model.engine {
-        case .apple: return now + "On-device, built into macOS."
-        case .hearth: return now + "Hearth runs a local model on your Mac and shows Moniker's usage. github.com/seckinbeduk/hearth"
-        case .auto: return now + "Apple Intelligence when it's available, Hearth otherwise."
+        case .auto: return now + "Through Hearth when it's running, so you can see Moniker's usage there; directly otherwise."
+        case .apple: return now + "On-device, built into macOS. Never uses Hearth."
+        case .hearth: return now + "Only through Hearth, which runs models on your Mac. github.com/seckinbeduk/hearth"
         }
     }
 
@@ -174,15 +174,15 @@ private struct SettingsSection: View {
         @Bindable var model = model
         VStack(alignment: .leading, spacing: 10) {
             Picker("Engine", selection: $model.engine) {
-                Text("Apple Intelligence").tag(Engine.apple)
-                Text("Hearth").tag(Engine.hearth)
                 Text("Automatic").tag(Engine.auto)
+                Text("Apple Intelligence only").tag(Engine.apple)
+                Text("Hearth only").tag(Engine.hearth)
             }
             .pickerStyle(.menu)
             if model.engine != .apple {
                 Picker("Hearth model", selection: $model.hearthModel) {
-                    Text("Local model").tag("hearth")
                     Text("Apple Intelligence").tag("apple-intelligence")
+                    Text("Local model").tag("hearth")
                 }
                 .pickerStyle(.menu)
             }

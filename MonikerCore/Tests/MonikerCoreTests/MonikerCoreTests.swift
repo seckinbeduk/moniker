@@ -189,26 +189,12 @@ struct RenamerTests {
     }
 }
 
-@Suite("Hearth replies")
-struct JSONReplyTests {
-    struct Idea: Decodable, Equatable { var title: String? }
-
-    @Test func plainJSON() {
-        #expect(JSONReply.decode(Idea.self, from: #"{"title": "Flight Booking"}"#) == Idea(title: "Flight Booking"))
-    }
-
-    @Test func wrappedInFencesAndThinking() {
-        let reply = "<think>\nThe user wants a title.\n</think>\nSure:\n```json\n{\"title\": \"Tax Return 2025\"}\n```"
-        #expect(JSONReply.decode(Idea.self, from: reply) == Idea(title: "Tax Return 2025"))
-    }
-
-    @Test func noJSON() {
-        #expect(JSONReply.decode(Idea.self, from: "I can't help with that.") == nil)
-    }
-
-    @Test func engines() {
-        #expect(Engine(rawValue: "hearth") == .hearth)
+@Suite("Engine")
+struct EngineTests {
+    @Test func names() {
         #expect(Engine(rawValue: "auto") == .auto)
+        #expect(Engine(rawValue: "hearth") == .hearth)
+        #expect(Engine(rawValue: "apple") == .apple)
         #expect(Engine(rawValue: "cloud") == nil)
     }
 }

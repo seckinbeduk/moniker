@@ -30,15 +30,20 @@ it a name you could actually search for. Nothing is uploaded, nothing costs anyt
 Prefer to decide yourself? Turn off **Rename automatically** and suggestions wait in the menu
 until you confirm them. **Name Files…** names any files you pick, whatever they're called now.
 
-## No Apple Intelligence? Use Hearth
+## Works with Hearth
 
-[Hearth](https://github.com/seckinbeduk/hearth) runs a local model on your Mac. In Moniker's settings,
-set **Engine** to **Hearth** (always) or **Automatic** (Apple Intelligence when it's available, Hearth otherwise).
-Moniker finds Hearth by itself and shows up in its **Who's using it**, so you can see how much it uses.
+[Hearth](https://github.com/seckinbeduk/hearth) runs models on your Mac and shows which app uses
+how much. When it's running, Moniker talks to Apple Intelligence through it, with no slowdown, so
+every name it writes shows up in Hearth's **Who's using it**. When it isn't, Moniker uses Apple
+Intelligence directly. Moniker uses [HearthKit](https://github.com/seckinbeduk/hearthkit) for this.
+
+In settings, **Engine** picks Automatic (the above), Apple Intelligence only or Hearth only, and
+**Hearth model** picks Apple Intelligence or Hearth's local model (Qwen, Gemma…). No Apple
+Intelligence on this Mac? Run Hearth with a local model and Moniker uses that.
 
 ## Install
 
-Requires macOS 26 or later with Apple Intelligence turned on, Xcode 26, and
+Requires macOS 27 or later with Apple Intelligence turned on (or Hearth running), Xcode 27, and
 [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
 
 ```sh

@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import HearthKit
 import MonikerCore
 import Observation
 import ServiceManagement
@@ -38,7 +39,7 @@ final class AppModel {
     var engine: Engine {
         didSet { defaults.set(engine.rawValue, forKey: Keys.engine); refreshAvailability() }
     }
-    /// What Moniker asks Hearth for: its local model ("hearth") or Apple's ("apple-intelligence").
+    /// What Moniker asks Hearth for: Apple's model ("apple-intelligence", default) or its local one ("hearth").
     var hearthModel: String {
         didSet { defaults.set(hearthModel, forKey: Keys.hearthModel); refreshAvailability() }
     }
@@ -47,9 +48,7 @@ final class AppModel {
     var openAtLogin: Bool {
         didSet {
             if openAtLogin { try? SMAppService.mainApp.register() } else { try? SMAppService.mainApp.unregister() }
-            engine = Engine(rawValue: defaults.string(forKey: Keys.engine) ?? "") ?? .apple
-        hearthModel = defaults.string(forKey: Keys.hearthModel) ?? "hearth"
-        openAtLogin = SMAppService.mainApp.status == .enabled
+            openAtLogin = SMAppService.mainApp.status == .enabled
         }
     }
 
@@ -83,8 +82,8 @@ final class AppModel {
         } else {
             folders = Self.defaultFolders()
         }
-        engine = Engine(rawValue: defaults.string(forKey: Keys.engine) ?? "") ?? .apple
-        hearthModel = defaults.string(forKey: Keys.hearthModel) ?? "hearth"
+        engine = Engine(rawValue: defaults.string(forKey: Keys.engine) ?? "") ?? .auto
+        hearthModel = defaults.string(forKey: Keys.hearthModel) ?? "apple-intelligence"
         openAtLogin = SMAppService.mainApp.status == .enabled
         recent = journal.load()
     }
@@ -97,22 +96,29 @@ final class AppModel {
     static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
 
     /// The model for the chosen engine, or nil with the reason in `availabilityProblem`.
+    /// Automatic: Hearth when it's running, so usage shows up there; Apple Intelligence directly otherwise.
     private func namingModel() async -> (any NamingModel)? {
-        let appleProblem = engine == .hearth ? nil : AppleIntelligence.unavailableReason()
-        if engine == .apple || (engine == .auto && appleProblem == nil) {
-            availabilityProblem = appleProblem.map { $0 + " Or switch the engine to Hearth in settings." }
-            engineDescription = appleProblem == nil ? "Apple Intelligence" : nil
-            return appleProblem == nil ? AppleIntelligenceNamer() : nil
+        if engine != .apple, let status = await HearthModel.status() {
+            let backend: HearthModel.Backend = hearthModel == "hearth" ? .local : .appleIntelligence
+            availabilityProblem = nil
+            engineDescription = backend == .local
+                ? "Hearth's local model" + (status.localModel.map { " (\($0))" } ?? " (none loaded, so Apple Intelligence)")
+                : "Apple Intelligence through Hearth"
+            return FoundationNamer(model: HearthModel(backend, appName: "Moniker"))
         }
-        guard let client = await HearthClient.discover(appName: "Moniker", appVersion: Self.version,
-                                                       requestedModel: hearthModel) else {
+        if engine == .hearth {
             availabilityProblem = HearthError.notRunning.errorDescription
             engineDescription = nil
             return nil
         }
+        if let problem = AppleIntelligence.unavailableReason() {
+            availabilityProblem = problem + " Or run Hearth with a local model; Moniker uses it automatically."
+            engineDescription = nil
+            return nil
+        }
         availabilityProblem = nil
-        engineDescription = "Hearth (\(client.servingDescription))"
-        return HearthNamer(client: client)
+        engineDescription = "Apple Intelligence"
+        return FoundationNamer.appleIntelligence()
     }
 
     func launch() {

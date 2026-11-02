@@ -12,16 +12,23 @@ struct GeneratedName {
     var tags: [String]
 }
 
-/// Apple's on-device model, through the Foundation Models framework.
-struct AppleIntelligenceNamer: NamingModel {
-    /// File contents are input to describe, not to judge, so use the permissive guardrails.
-    let model = SystemLanguageModel(useCase: .general, guardrails: .permissiveContentTransformations)
+/// Moniker's namer: any Foundation Models `LanguageModel`, so Apple Intelligence directly and
+/// Hearth (through HearthKit) run the same code with the same @Generable type.
+struct FoundationNamer<Model: LanguageModel>: NamingModel {
+    let model: Model
 
     func suggest(instructions: String, prompt: String) async throws -> NameIdea {
-        let session = LanguageModelSession(model: model, instructions: instructions)
+        let session = LanguageModelSession(model: model, tools: [], instructions: instructions)
         let options = GenerationOptions(temperature: 0.3, maximumResponseTokens: 120)
         let name = try await session.respond(to: prompt, generating: GeneratedName.self, options: options).content
         return NameIdea(title: name.title, tags: name.tags)
+    }
+}
+
+extension FoundationNamer where Model == SystemLanguageModel {
+    /// File contents are input to describe, not to judge, so use the permissive guardrails.
+    static func appleIntelligence() -> FoundationNamer<SystemLanguageModel> {
+        FoundationNamer(model: SystemLanguageModel(useCase: .general, guardrails: .permissiveContentTransformations))
     }
 }
 

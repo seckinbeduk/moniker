@@ -2,20 +2,23 @@ name: Moniker
 options:
   bundleIdPrefix: io.github.seckinbeduk
   deploymentTarget:
-    macOS: "26.0"          # Foundation Models
+    macOS: "27.0"          # Foundation Models third-party model API (HearthKit)
   createIntermediateGroups: true
 
 settings:
   base:
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "0.2.0"
     CURRENT_PROJECT_VERSION: "1"
     ENABLE_HARDENED_RUNTIME: YES   # Required for notarization
 
 packages:
   MonikerCore:
     path: MonikerCore
+  HearthKit:
+    url: https://github.com/seckinbeduk/hearthkit
+    from: "0.1.0"
 
 targets:
   Moniker:
@@ -25,6 +28,7 @@ targets:
       - path: Moniker
     dependencies:
       - package: MonikerCore
+      - package: HearthKit
     # Not sandboxed: Moniker renames files in folders you choose and is distributed with Developer ID.
     info:
       path: Moniker/Info.plist
@@ -33,7 +37,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.productivity
-        LSMinimumSystemVersion: "26.0"
+        LSMinimumSystemVersion: "27.0"
         LSUIElement: true      # Menu bar app, no Dock icon
         NSHumanReadableCopyright: "© 2026 Seçkin Bedük. MIT License."
         NSDesktopFolderUsageDescription: Moniker gives new screenshots and files on your Desktop names that say what's inside.
