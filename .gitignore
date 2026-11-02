@@ -1,0 +1,5 @@
+.build/
+.swiftpm/
+Moniker.xcodeproj/
+Moniker/Info.plist
+.DS_Store
