@@ -34,12 +34,20 @@ public struct HearthClient: Sendable {
     public let appVersion: String
     /// The model Hearth is serving, if it said.
     public let model: String?
+    /// What to ask Hearth for: "hearth" (its local model) or "apple-intelligence" (Apple's, through Hearth).
+    public var requestedModel: String
 
-    public init(baseURL: URL, appName: String, appVersion: String, model: String? = nil) {
+    public init(baseURL: URL, appName: String, appVersion: String, model: String? = nil, requestedModel: String = "hearth") {
         self.baseURL = baseURL
         self.appName = appName
         self.appVersion = appVersion
         self.model = model
+        self.requestedModel = requestedModel
+    }
+
+    /// "mlx-community/Qwen3-8B-4bit" or "Apple Intelligence via Hearth", for logs and status lines.
+    public var servingDescription: String {
+        requestedModel.lowercased().hasPrefix("apple") ? "Apple Intelligence via Hearth" : (model ?? "no model loaded")
     }
 
     /// Hearth's preferred port is 8800; if that's taken it uses one of the next nine.
@@ -54,7 +62,7 @@ public struct HearthClient: Sendable {
     }
 
     /// Finds a running Hearth on this Mac, or nil.
-    public static func discover(appName: String, appVersion: String) async -> HearthClient? {
+    public static func discover(appName: String, appVersion: String, requestedModel: String = "hearth") async -> HearthClient? {
         for port in candidatePorts() {
             guard let base = URL(string: "http://127.0.0.1:\(port)") else { continue }
             var request = URLRequest(url: base.appendingPathComponent("health"))
@@ -63,7 +71,8 @@ public struct HearthClient: Sendable {
                   (response as? HTTPURLResponse)?.statusCode == 200,
                   let health = try? JSONDecoder().decode(Health.self, from: data),
                   health.server == "Hearth" else { continue }
-            return HearthClient(baseURL: base, appName: appName, appVersion: appVersion, model: health.model)
+            return HearthClient(baseURL: base, appName: appName, appVersion: appVersion, model: health.model,
+                                requestedModel: requestedModel)
         }
         return nil
     }
@@ -75,18 +84,28 @@ public struct HearthClient: Sendable {
     }
 
     /// One chat completion, not streamed. Returns the text with any thinking removed.
-    public func chat(system: String, user: String, maxTokens: Int, temperature: Double = 0.3) async throws -> String {
+    /// With a `schema` (JSON Schema), Hearth answers Apple Intelligence requests through guided
+    /// generation, so the reply always matches; local models get the schema as an instruction.
+    public func chat(system: String, user: String, maxTokens: Int, temperature: Double = 0.3,
+                     schema: [String: Any]? = nil, schemaName: String = "Response") async throws -> String {
         var request = URLRequest(url: baseURL.appendingPathComponent("v1/chat/completions"))
         request.httpMethod = "POST"
         request.timeoutInterval = 180
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("\(appName)/\(appVersion) (macOS)", forHTTPHeaderField: "User-Agent")
         request.setValue(appName, forHTTPHeaderField: "X-Title")
-        request.httpBody = try JSONEncoder().encode(ChatRequest(
-            model: "hearth",
-            messages: [.init(role: "system", content: system), .init(role: "user", content: user)],
-            max_tokens: maxTokens, temperature: temperature, stream: false
-        ))
+        var body: [String: Any] = [
+            "model": requestedModel,
+            "messages": [["role": "system", "content": system], ["role": "user", "content": user]],
+            "max_tokens": maxTokens,
+            "temperature": temperature,
+            "stream": false,
+        ]
+        if let schema {
+            body["response_format"] = ["type": "json_schema",
+                                       "json_schema": ["name": schemaName, "schema": schema, "strict": true]]
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let data: Data
         let response: URLResponse
@@ -103,18 +122,6 @@ public struct HearthClient: Sendable {
         guard let reply = try? JSONDecoder().decode(ChatReply.self, from: data),
               let content = reply.choices.first?.message.content else { throw HearthError.badReply }
         return JSONReply.removeThinking(content)
-    }
-
-    struct ChatRequest: Encodable {
-        struct Message: Encodable {
-            let role: String
-            let content: String
-        }
-        let model: String
-        let messages: [Message]
-        let max_tokens: Int
-        let temperature: Double
-        let stream: Bool
     }
 
     struct ChatReply: Decodable {
@@ -161,11 +168,26 @@ public struct HearthNamer: NamingModel {
         Reply with only a JSON object, no other text:
         {"title": "...", "tags": ["..."]}
         """
-        let reply = try await client.chat(system: system, user: prompt, maxTokens: 150)
+        let reply = try await client.chat(system: system, user: prompt, maxTokens: 150,
+                                          schema: Self.schema, schemaName: "FileName")
         guard let idea = JSONReply.decode(Reply.self, from: reply), let title = idea.title, !title.isEmpty else {
             throw HearthError.badReply
         }
         return NameIdea(title: title, tags: idea.tags ?? [])
+    }
+
+    /// The same shape as the @Generable type used with Apple Intelligence directly.
+    static var schema: [String: Any] {
+        [
+            "type": "object",
+            "properties": [
+                "title": ["type": "string",
+                          "description": "A short, specific title: 2 to 6 words in Title Case, no date, no file extension"],
+                "tags": ["type": "array", "items": ["type": "string"], "maxItems": 3,
+                         "description": "Up to three lowercase one-word topics"],
+            ],
+            "required": ["title", "tags"],
+        ]
     }
 
     struct Reply: Decodable {

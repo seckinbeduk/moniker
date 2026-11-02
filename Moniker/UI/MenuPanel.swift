@@ -179,6 +179,13 @@ private struct SettingsSection: View {
                 Text("Automatic").tag(Engine.auto)
             }
             .pickerStyle(.menu)
+            if model.engine != .apple {
+                Picker("Hearth model", selection: $model.hearthModel) {
+                    Text("Local model").tag("hearth")
+                    Text("Apple Intelligence").tag("apple-intelligence")
+                }
+                .pickerStyle(.menu)
+            }
             Text(engineHelp)
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

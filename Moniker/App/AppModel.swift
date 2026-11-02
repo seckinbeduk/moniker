@@ -38,12 +38,17 @@ final class AppModel {
     var engine: Engine {
         didSet { defaults.set(engine.rawValue, forKey: Keys.engine); refreshAvailability() }
     }
+    /// What Moniker asks Hearth for: its local model ("hearth") or Apple's ("apple-intelligence").
+    var hearthModel: String {
+        didSet { defaults.set(hearthModel, forKey: Keys.hearthModel); refreshAvailability() }
+    }
     /// "Apple Intelligence" or "Hearth (model)", whichever names files right now.
     var engineDescription: String?
     var openAtLogin: Bool {
         didSet {
             if openAtLogin { try? SMAppService.mainApp.register() } else { try? SMAppService.mainApp.unregister() }
             engine = Engine(rawValue: defaults.string(forKey: Keys.engine) ?? "") ?? .apple
+        hearthModel = defaults.string(forKey: Keys.hearthModel) ?? "hearth"
         openAtLogin = SMAppService.mainApp.status == .enabled
         }
     }
@@ -52,7 +57,7 @@ final class AppModel {
 
     private enum Keys {
         static let watching = "watching", automatic = "renameAutomatically", date = "addDate"
-        static let tags = "addTags", folders = "folders", engine = "engine"
+        static let tags = "addTags", folders = "folders", engine = "engine", hearthModel = "hearthModel"
     }
     private struct Job {
         var url: URL
@@ -79,6 +84,7 @@ final class AppModel {
             folders = Self.defaultFolders()
         }
         engine = Engine(rawValue: defaults.string(forKey: Keys.engine) ?? "") ?? .apple
+        hearthModel = defaults.string(forKey: Keys.hearthModel) ?? "hearth"
         openAtLogin = SMAppService.mainApp.status == .enabled
         recent = journal.load()
     }
@@ -98,13 +104,14 @@ final class AppModel {
             engineDescription = appleProblem == nil ? "Apple Intelligence" : nil
             return appleProblem == nil ? AppleIntelligenceNamer() : nil
         }
-        guard let client = await HearthClient.discover(appName: "Moniker", appVersion: Self.version) else {
+        guard let client = await HearthClient.discover(appName: "Moniker", appVersion: Self.version,
+                                                       requestedModel: hearthModel) else {
             availabilityProblem = HearthError.notRunning.errorDescription
             engineDescription = nil
             return nil
         }
         availabilityProblem = nil
-        engineDescription = "Hearth" + (client.model.map { " (\($0))" } ?? "")
+        engineDescription = "Hearth (\(client.servingDescription))"
         return HearthNamer(client: client)
     }
 
