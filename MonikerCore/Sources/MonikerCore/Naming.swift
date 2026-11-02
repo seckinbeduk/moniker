@@ -64,7 +64,7 @@ public enum Prompts {
     public static let instructions = """
     You name files so people can find them later. Given what a file contains, write a short, specific title: \
     2 to 6 words, Title Case, no date, no file extension, no quotes.
-    Say what it is and whose or about what: "Turkcell Invoice October", "Swift Build Error Log", \
+    Say what it is and whose or about what: "Electricity Bill October", "Swift Build Error Log", \
     "Flight Booking Istanbul Berlin", "Wireframe Settings Screen".
     Write the title in the main language of the text in the file.
     tags: up to three lowercase single-word topics.
@@ -135,7 +135,7 @@ public enum FileNamer {
         return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
     }
 
-    /// `2026-11-02 Turkcell Invoice October.pdf`
+    /// `2026-11-02 Electricity Bill October.pdf`
     public static func filename(title: String, date: Date?, pathExtension: String, timeZone: TimeZone = .current) -> String {
         let base = date.map { datePrefix($0, timeZone: timeZone) + " " + title } ?? title
         return pathExtension.isEmpty ? base : base + "." + pathExtension

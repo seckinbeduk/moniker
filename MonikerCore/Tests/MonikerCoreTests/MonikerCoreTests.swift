@@ -25,7 +25,7 @@ struct PolicyTests {
     }
 
     @Test(arguments: [
-        "Turkcell Fatura Ekim.pdf",
+        "Elektrik Faturası Ekim.pdf",
         "README.md",
         "invoice-acme-2026.pdf",
         "Seçkin Bedük CV.pdf",
@@ -42,7 +42,7 @@ struct PolicyTests {
         #expect(!RenamePolicy.shouldConsider(URL(fileURLWithPath: "/tmp/.Screenshot 2026-11-02 at 16.52.04.png")))
         #expect(!RenamePolicy.shouldConsider(URL(fileURLWithPath: "/tmp/document.pdf.crdownload")))
         #expect(!RenamePolicy.shouldConsider(URL(fileURLWithPath: "/tmp/IMG_0001.mov")))
-        #expect(!RenamePolicy.shouldConsider(URL(fileURLWithPath: "/tmp/Turkcell Fatura.pdf")))
+        #expect(!RenamePolicy.shouldConsider(URL(fileURLWithPath: "/tmp/Elektrik Faturası.pdf")))
     }
 
     @Test func kinds() {
@@ -73,8 +73,8 @@ struct FileNamerTests {
     @Test func filenameWithDate() {
         let date = Date(timeIntervalSince1970: 1_793_627_000)   // 2026-11-02 in UTC
         let utc = TimeZone(identifier: "UTC")!
-        #expect(FileNamer.filename(title: "Turkcell Invoice", date: date, pathExtension: "pdf", timeZone: utc)
-                == "2026-11-02 Turkcell Invoice.pdf")
+        #expect(FileNamer.filename(title: "Electricity Bill", date: date, pathExtension: "pdf", timeZone: utc)
+                == "2026-11-02 Electricity Bill.pdf")
         #expect(FileNamer.filename(title: "Notes", date: nil, pathExtension: "md") == "Notes.md")
     }
 
@@ -89,7 +89,7 @@ struct FileNamerTests {
 @Suite("Prompt")
 struct PromptTests {
     @Test func imagePromptCarriesLabelsAndText() {
-        let content = FileContent(kind: .image, originalName: "Screenshot.png", text: "Turkcell\nFatura Tutarı 412,50 TL",
+        let content = FileContent(kind: .image, originalName: "Screenshot.png", text: "Elektrik Faturası\nFatura Tutarı 412,50 TL",
                                   labels: ["screenshot", "document"])
         let prompt = Prompts.prompt(for: content)
         #expect(prompt.contains("(screenshot)"))
@@ -116,7 +116,7 @@ struct PromptTests {
 
 struct FakeReader: ContentReader {
     func read(_ url: URL, kind: FileKind) async throws -> FileContent {
-        FileContent(kind: kind, originalName: url.lastPathComponent, text: "Turkcell fatura")
+        FileContent(kind: kind, originalName: url.lastPathComponent, text: "elektrik faturası")
     }
 }
 
@@ -142,15 +142,15 @@ struct RenamerTests {
 
     @Test func suggestApplyUndo() async throws {
         let file = try makeFile("Screenshot 2026-11-02 at 16.52.04.png")
-        let renamer = Renamer(reader: FakeReader(), model: FakeModel(idea: NameIdea(title: "Turkcell Fatura Ekim", tags: ["Bills"])))
+        let renamer = Renamer(reader: FakeReader(), model: FakeModel(idea: NameIdea(title: "Elektrik Faturası Ekim", tags: ["Bills"])))
 
         let suggestion = try await renamer.suggest(for: file, datePrefix: false)
-        #expect(suggestion.newName == "Turkcell Fatura Ekim.png")
+        #expect(suggestion.newName == "Elektrik Faturası Ekim.png")
         #expect(suggestion.tags == ["bills"])
         #expect(FileManager.default.fileExists(atPath: file.path))   // suggesting changes nothing
 
         let record = try Renamer.apply(suggestion)
-        #expect(record.renamed.lastPathComponent == "Turkcell Fatura Ekim.png")
+        #expect(record.renamed.lastPathComponent == "Elektrik Faturası Ekim.png")
         #expect(!FileManager.default.fileExists(atPath: file.path))
         #expect(FileManager.default.fileExists(atPath: record.renamed.path))
 
