@@ -2,7 +2,7 @@
 
 **Your files, named for what's inside. On your Mac, by Apple Intelligence.**
 
-`Screenshot 2026-11-02 at 16.52.04.png` becomes `2026-11-02 Turkcell Invoice October.png`.
+`Screenshot 2026-11-02 at 16.52.04.png` becomes `2026-11-02 XYZ Invoice October.png`.
 `IMG_4821.HEIC` becomes `2026-11-02 Receipt Blue Bottle Coffee.heic`.
 `document (3).pdf` becomes `2026-11-02 Flight Booking Istanbul Berlin.pdf`.
 
