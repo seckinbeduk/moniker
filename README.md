@@ -43,12 +43,18 @@ Intelligence on this Mac? Run Hearth with a local model and Moniker uses that.
 
 ## Install
 
-Requires macOS 27 or later with Apple Intelligence turned on (or Hearth running), Xcode 27, and
-[XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
+Needs an Apple silicon Mac with Apple Intelligence turned on, or [Hearth](https://github.com/seckinbeduk/hearth) running,
+and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`). Pick the version for your macOS:
+
+| macOS | Moniker | Builds with | What you get |
+|---|---|---|---|
+| 27 or later | [latest](https://github.com/seckinbeduk/moniker/releases/latest) (0.2.0+) | Xcode 27 | Everything, and Hearth is used automatically when it's running |
+| 26 | [0.1.0](https://github.com/seckinbeduk/moniker/releases/tag/v0.1.0) | Xcode 26 | Everything except automatic Hearth; choose Hearth as the engine in settings |
 
 ```sh
 git clone https://github.com/seckinbeduk/moniker.git
 cd moniker
+git checkout v0.1.0   # macOS 26 only
 ./run.sh
 ```
 
